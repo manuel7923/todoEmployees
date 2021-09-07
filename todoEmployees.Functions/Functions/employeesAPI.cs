@@ -19,15 +19,15 @@ namespace todoEmployees.Functions.Functions
         [FunctionName(nameof(CreateTime))]
         public static async Task<IActionResult> CreateTime(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "time")] HttpRequest req,
-            [Table("time", Connection = "AzureWebJobsStorage")] CloudTable todoTable,
+            [Table("time", Connection = "AzureWebJobsStorage")] CloudTable timeTable,
             ILogger log)
         {
             log.LogInformation("Received a new time.");
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            Time todo = JsonConvert.DeserializeObject<Time>(requestBody);
+            Time time = JsonConvert.DeserializeObject<Time>(requestBody);
 
-            if (string.IsNullOrEmpty(todo?.EmployeeId.ToString()))
+            if (string.IsNullOrEmpty(time?.EmployeeId.ToString()))
             {
                 return new BadRequestObjectResult(new Response
                 {
@@ -37,7 +37,7 @@ namespace todoEmployees.Functions.Functions
                 });
             }
 
-            if (string.IsNullOrEmpty(todo?.Type.ToString()))
+            if (string.IsNullOrEmpty(time?.Type.ToString()))
             {
                 return new BadRequestObjectResult(new Response
                 {
@@ -49,9 +49,9 @@ namespace todoEmployees.Functions.Functions
 
             EmployeesEntities employeeEntity = new EmployeesEntities
             {
-                EmployeeId = todo.EmployeeId,
-                Type = todo.Type,
-                Date = todo.Date,
+                EmployeeId = time.EmployeeId,
+                Type = time.Type,
+                Date = time.Date,
                 IsConsolidated = false,
                 PartitionKey = "TIME",
                 RowKey = Guid.NewGuid().ToString(),
@@ -59,7 +59,7 @@ namespace todoEmployees.Functions.Functions
             };
 
             TableOperation addOperation = TableOperation.Insert(employeeEntity);
-            await todoTable.ExecuteAsync(addOperation);
+            await timeTable.ExecuteAsync(addOperation);
 
             string message = "New time stored in table.";
             log.LogInformation(message);
@@ -75,39 +75,39 @@ namespace todoEmployees.Functions.Functions
         [FunctionName(nameof(UpdateTime))]
         public static async Task<IActionResult> UpdateTime(
             [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "time/{employeeId}")] HttpRequest req,
-            [Table("time", Connection = "AzureWebJobsStorage")] CloudTable todoTable,
+            [Table("time", Connection = "AzureWebJobsStorage")] CloudTable timeTable,
             string employeeId,
             ILogger log)
         {
             log.LogInformation($"Update for employee: {employeeId}, received.");
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            Time todo = JsonConvert.DeserializeObject<Time>(requestBody);
+            Time time = JsonConvert.DeserializeObject<Time>(requestBody);
 
-            // Validate todo id
+            // Validate time id
             TableOperation findOperation = TableOperation.Retrieve<EmployeesEntities>("TIME", employeeId);
-            TableResult findResult = await todoTable.ExecuteAsync(findOperation);
+            TableResult findResult = await timeTable.ExecuteAsync(findOperation);
             if (findResult.Result == null)
             {
                 return new BadRequestObjectResult(new Response
                 {
                     IsSuccess = false,
-                    Message = "Todo not found."
+                    Message = "Time not found."
 
                 });
             }
 
-            // Update todo 
+            // Update time 
             EmployeesEntities employeeEntity = (EmployeesEntities)findResult.Result;
-            employeeEntity.IsConsolidated = todo.IsConsolidated;
+            employeeEntity.IsConsolidated = time.IsConsolidated;
 
-            if (!string.IsNullOrEmpty(todo.Type.ToString()))
+            if (!string.IsNullOrEmpty(time.Type.ToString()))
             {
-                employeeEntity.Type = todo.Type;
+                employeeEntity.Type = time.Type;
             }
 
             TableOperation addOperation = TableOperation.Replace(employeeEntity);
-            await todoTable.ExecuteAsync(addOperation);
+            await timeTable.ExecuteAsync(addOperation);
 
             string message = $"Employee: {employeeId}, updated in table.";
             log.LogInformation(message);
@@ -123,13 +123,13 @@ namespace todoEmployees.Functions.Functions
         [FunctionName(nameof(GetAllTimes))]
         public static async Task<IActionResult> GetAllTimes(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "time")] HttpRequest req,
-            [Table("time", Connection = "AzureWebJobsStorage")] CloudTable todoTable,
+            [Table("time", Connection = "AzureWebJobsStorage")] CloudTable timeTable,
             ILogger log)
         {
             log.LogInformation("Get all times received.");
 
             TableQuery<EmployeesEntities> query = new TableQuery<EmployeesEntities>();
-            TableQuerySegment<EmployeesEntities> todos = await todoTable.ExecuteQuerySegmentedAsync(query, null);
+            TableQuerySegment<EmployeesEntities> times = await timeTable.ExecuteQuerySegmentedAsync(query, null);
 
             string message = "Retrieved all times.";
             log.LogInformation(message);
@@ -138,7 +138,7 @@ namespace todoEmployees.Functions.Functions
             {
                 IsSuccess = true,
                 Message = message,
-                Result = todos
+                Result = times
             });
         }
 
@@ -149,19 +149,19 @@ namespace todoEmployees.Functions.Functions
             string employeeId,
             ILogger log)
         {
-            log.LogInformation($"Get todo by id: {employeeId} received.");
+            log.LogInformation($"Get time by id: {employeeId} received.");
 
             if (employeeEntity == null)
             {
                 return new BadRequestObjectResult(new Response
                 {
                     IsSuccess = false,
-                    Message = "Todo not found."
+                    Message = "Time not found."
 
                 });
             }
 
-            string message = $"Todo {employeeEntity.RowKey}, retrieved.";
+            string message = $"Time {employeeEntity.RowKey}, retrieved.";
             log.LogInformation(message);
 
             return new OkObjectResult(new Response
@@ -176,11 +176,11 @@ namespace todoEmployees.Functions.Functions
         public static async Task<IActionResult> DeleteTime(
             [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "time/{employeeId}")] HttpRequest req,
             [Table("time", "TIME", "{employeeId}", Connection = "AzureWebJobsStorage")] EmployeesEntities employeeEntity,
-            [Table("time", Connection = "AzureWebJobsStorage")] CloudTable todoTable,
+            [Table("time", Connection = "AzureWebJobsStorage")] CloudTable timeTable,
             string employeeId,
             ILogger log)
         {
-            log.LogInformation($"Delete todo: {employeeId} received.");
+            log.LogInformation($"Delete time: {employeeId} received.");
 
             if (employeeEntity == null)
             {
@@ -192,7 +192,7 @@ namespace todoEmployees.Functions.Functions
                 });
             }
 
-            await todoTable.ExecuteAsync(TableOperation.Delete(employeeEntity));
+            await timeTable.ExecuteAsync(TableOperation.Delete(employeeEntity));
 
             string message = $"Employee {employeeEntity.RowKey}, deleted.";
             log.LogInformation(message);
