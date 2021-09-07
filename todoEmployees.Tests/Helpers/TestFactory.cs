@@ -4,9 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using todoEmployees.Common.Models;
 using todoJose.Tests.Helpers;
 
@@ -15,7 +13,7 @@ namespace todoEmployees.Tests.Helpers
     public class TestFactory
     {
 
-        public static DefaultHttpRequest CreateHttpRequest(Guid todoId, Todo todoRequest)
+        public static DefaultHttpRequest CreateHttpRequest(Guid todoId, Time todoRequest)
         {
             string request = JsonConvert.SerializeObject(todoRequest);
             return new DefaultHttpRequest(new DefaultHttpContext())
@@ -33,7 +31,7 @@ namespace todoEmployees.Tests.Helpers
             };
         }
 
-        public static DefaultHttpRequest CreateHttpRequest(Todo todoRequest)
+        public static DefaultHttpRequest CreateHttpRequest(Time todoRequest)
         {
             string request = JsonConvert.SerializeObject(todoRequest);
             return new DefaultHttpRequest(new DefaultHttpContext())
@@ -47,13 +45,13 @@ namespace todoEmployees.Tests.Helpers
             return new DefaultHttpRequest(new DefaultHttpContext());
         }
 
-        public static Todo GetTodoRequest()
+        public static Time GetTodoRequest()
         {
-            return new Todo
+            return new Time
             {
-                date = DateTime.UtcNow,
-                isConsolidated = false,
-                type = 0
+                Date = DateTime.UtcNow,
+                IsConsolidated = false,
+                Type = 0
             };
         }
 

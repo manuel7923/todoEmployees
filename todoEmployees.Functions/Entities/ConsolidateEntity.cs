@@ -1,15 +1,17 @@
 ﻿using Microsoft.WindowsAzure.Storage.Table;
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace todoEmployees.Functions.Entities
 {
-    public class EmployeesEntities : TableEntity
+    public class ConsolidateEntity : TableEntity
     {
-        public DateTime Timestamp { get; set; }
         public int EmployeeId { get; set; }
+
         public DateTime Date { get; set; }
-        public int Type { get; set; }
-        public bool IsConsolidated { get; set; }
+
         public double MinutesWork { get; set; }
     }
+
 }

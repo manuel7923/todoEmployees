@@ -25,9 +25,9 @@ namespace todoEmployees.Functions.Functions
             log.LogInformation("Received a new time.");
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            Todo todo = JsonConvert.DeserializeObject<Todo>(requestBody);
+            Time todo = JsonConvert.DeserializeObject<Time>(requestBody);
 
-            if (string.IsNullOrEmpty(todo?.employeeId.ToString()))
+            if (string.IsNullOrEmpty(todo?.EmployeeId.ToString()))
             {
                 return new BadRequestObjectResult(new Response
                 {
@@ -37,7 +37,7 @@ namespace todoEmployees.Functions.Functions
                 });
             }
 
-            if (string.IsNullOrEmpty(todo?.type.ToString()))
+            if (string.IsNullOrEmpty(todo?.Type.ToString()))
             {
                 return new BadRequestObjectResult(new Response
                 {
@@ -47,14 +47,14 @@ namespace todoEmployees.Functions.Functions
                 });
             }
 
-            employeesEntities employeeEntity = new employeesEntities
+            EmployeesEntities employeeEntity = new EmployeesEntities
             {
-                employeeId = todo.employeeId,
-                type = todo.type,
-                isConsolidated = false,
+                EmployeeId = todo.EmployeeId,
+                Type = todo.Type,
+                Date = todo.Date,
+                IsConsolidated = false,
                 PartitionKey = "TIME",
                 RowKey = Guid.NewGuid().ToString(),
-                timestamp  = DateTime.UtcNow,
                 ETag = "*"
             };
 
@@ -82,10 +82,10 @@ namespace todoEmployees.Functions.Functions
             log.LogInformation($"Update for employee: {employeeId}, received.");
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            Todo todo = JsonConvert.DeserializeObject<Todo>(requestBody);
+            Time todo = JsonConvert.DeserializeObject<Time>(requestBody);
 
             // Validate todo id
-            TableOperation findOperation = TableOperation.Retrieve<employeesEntities>("TIME", employeeId);
+            TableOperation findOperation = TableOperation.Retrieve<EmployeesEntities>("TIME", employeeId);
             TableResult findResult = await todoTable.ExecuteAsync(findOperation);
             if (findResult.Result == null)
             {
@@ -98,12 +98,12 @@ namespace todoEmployees.Functions.Functions
             }
 
             // Update todo 
-            employeesEntities employeeEntity = (employeesEntities)findResult.Result;
-            employeeEntity.isConsolidated = todo.isConsolidated;
+            EmployeesEntities employeeEntity = (EmployeesEntities)findResult.Result;
+            employeeEntity.IsConsolidated = todo.IsConsolidated;
 
-            if (!string.IsNullOrEmpty(todo.type.ToString()))
+            if (!string.IsNullOrEmpty(todo.Type.ToString()))
             {
-                employeeEntity.type = todo.type;
+                employeeEntity.Type = todo.Type;
             }
 
             TableOperation addOperation = TableOperation.Replace(employeeEntity);
@@ -128,8 +128,8 @@ namespace todoEmployees.Functions.Functions
         {
             log.LogInformation("Get all times received.");
 
-            TableQuery<employeesEntities> query = new TableQuery<employeesEntities>();
-            TableQuerySegment<employeesEntities> todos = await todoTable.ExecuteQuerySegmentedAsync(query, null);
+            TableQuery<EmployeesEntities> query = new TableQuery<EmployeesEntities>();
+            TableQuerySegment<EmployeesEntities> todos = await todoTable.ExecuteQuerySegmentedAsync(query, null);
 
             string message = "Retrieved all times.";
             log.LogInformation(message);
@@ -145,7 +145,7 @@ namespace todoEmployees.Functions.Functions
         [FunctionName(nameof(GetTimeByID))]
         public static IActionResult GetTimeByID(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "time/{employeeId}")] HttpRequest req,
-            [Table("time", "TIME", "{employeeId}", Connection = "AzureWebJobsStorage")] employeesEntities employeeEntity,
+            [Table("time", "TIME", "{employeeId}", Connection = "AzureWebJobsStorage")] EmployeesEntities employeeEntity,
             string employeeId,
             ILogger log)
         {
@@ -175,7 +175,7 @@ namespace todoEmployees.Functions.Functions
         [FunctionName(nameof(DeleteTime))]
         public static async Task<IActionResult> DeleteTime(
             [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "time/{employeeId}")] HttpRequest req,
-            [Table("time", "TIME", "{employeeId}", Connection = "AzureWebJobsStorage")] employeesEntities employeeEntity,
+            [Table("time", "TIME", "{employeeId}", Connection = "AzureWebJobsStorage")] EmployeesEntities employeeEntity,
             [Table("time", Connection = "AzureWebJobsStorage")] CloudTable todoTable,
             string employeeId,
             ILogger log)
