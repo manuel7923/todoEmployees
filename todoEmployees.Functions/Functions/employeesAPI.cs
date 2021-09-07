@@ -106,6 +106,13 @@ namespace todoEmployees.Functions.Functions
                 employeeEntity.Type = time.Type;
             }
 
+            if (!string.IsNullOrEmpty(time.EmployeeId.ToString()))
+            {
+                employeeEntity.EmployeeId = time.EmployeeId;
+            }
+
+            employeeEntity.Date = time.Date;
+
             TableOperation addOperation = TableOperation.Replace(employeeEntity);
             await timeTable.ExecuteAsync(addOperation);
 
